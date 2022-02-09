@@ -2,32 +2,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# consumption = np.array([
-#     [7, 26, 95],
-#     [18, 24, 131]
-# ])
-#
-# change = np.array([
-#     0.5,
-#     -0.2
-# ])
-#
-# size = len(consumption)
-# C = consumption[:,:size]
-# Y = consumption[:,-1]
-# X = consumption.sum(axis=1)
-# A = C / X[:, None]
-# H = np.linalg.inv(np.eye(size) - A)
-# Y1 = Y * (1 + change)
-# X1 = H @ Y1
-#
-# index = np.arange(size)
-# plt.title('Change of consumption')
-# plt.axis([-0.5, size - 0.5, 0, max(X.max(), X1.max())])
-# plt.xticks(index, range(size))
-# plt.bar(index, X, color='pink')
-# plt.bar(index, X1 - X, color='#908493', bottom=X)
-# plt.show()
+def simple_solution():
+    consumption = np.array([
+        [7, 26, 95],
+        [18, 24, 131]
+    ])
+
+    change = np.array([
+        0.5,
+        -0.2
+    ])
+
+    size = len(consumption)
+    C = consumption[:,:size]
+    Y = consumption[:,-1]
+    X = consumption.sum(axis=1)
+    A = C / X[:, None]
+    H = np.linalg.inv(np.eye(size) - A)
+    Y1 = Y * (1 + change)
+    X1 = H @ Y1
+
+    index = np.arange(size)
+    plt.title('Change of consumption')
+    plt.axis([-0.5, size - 0.5, 0, max(X.max(), X1.max())])
+    plt.xticks(index, range(size))
+    plt.bar(index, X, color='pink')
+    plt.bar(index, X1 - X, color='#908493', bottom=X)
+    plt.show()
 
 
 def read_amount_from_console() -> int:
@@ -39,6 +40,7 @@ def read_amount_from_console() -> int:
         n = int(n)
         break
     return n
+
 
 def read_consumption_from_console(n: int) -> np.ndarray:
     consumption = []
@@ -138,7 +140,4 @@ def run():
           calc_gross_production(consumption, change))
     print("Изменение валового выпуска (%) \n",
           calc_delta_gross_production(consumption, change))
-
     show_chart_with_growth(consumption, change)
-
-
