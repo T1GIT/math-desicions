@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 def simple_solution():
@@ -14,8 +15,8 @@ def simple_solution():
     ])
 
     size = len(consumption)
-    C = consumption[:,:size]
-    Y = consumption[:,-1]
+    C = consumption[:, :size]
+    Y = consumption[:, -1]
     X = consumption.sum(axis=1)
     A = C / X[:, None]
     H = np.linalg.inv(np.eye(size) - A)
@@ -44,9 +45,9 @@ def read_amount_from_console() -> int:
 
 def read_consumption_from_console(n: int) -> np.ndarray:
     consumption = []
-    for _ in range(n):
+    for i in range(n):
         while True:
-            row = input("Введите строку(Xn1 Xn2 ... Xnn Xnn+1): ").strip()
+            row = input(f"Введите строку(X{i + 1}1 X{i + 1}2 ... X{i + 1}n X{i + 1}n+1): ").strip()
             row_split = row.split(" ")
             if len(row_split) != (n + 1):
                 print("Неверное количество аргументов")
@@ -73,18 +74,36 @@ def read_change_from_console(n: int) -> np.ndarray:
         except ValueError:
             print("Некорректное число")
             continue
-    return np.array(change)
+    return np.array(change).reshape((-1, 1))
+
+
+def read_consumption_from_csv() -> np.ndarray:
+    df = pd.read_csv('./data/consumption.csv', sep=';', decimal='.', header=None, index_col=None)
+    return df.to_numpy()
+
+
+def read_change_from_csv() -> np.ndarray:
+    df = pd.read_csv('./data/change.csv', sep=';', decimal='.', header=None, index_col=None)
+    return df.to_numpy() / 100
+
+
+def read_consumption_from_random(n: int) -> np.ndarray:
+    return np.random.randint(0, 100, (n, n + 1))
+
+
+def read_change_from_random(n: int) -> np.ndarray:
+    return np.random.random((n, 1)) * 2 - 1
 
 
 def calc_production(consumption: np.ndarray) -> np.ndarray:
-    return consumption.sum(axis=1)
+    return consumption.sum(axis=1).reshape(-1, 1)
 
 
 def calc_straight_costs(consumption: np.ndarray) -> np.ndarray:
     size = len(consumption)
     C = consumption[:, :size]
     X = calc_production(consumption)
-    return C / X[:, None]
+    return C[:, :size] / X.T
 
 
 def calc_full_costs(consumption: np.ndarray) -> np.ndarray:
@@ -94,8 +113,8 @@ def calc_full_costs(consumption: np.ndarray) -> np.ndarray:
 
 
 def calc_final_consumption(consumption: np.ndarray, change: np.ndarray) -> np.ndarray:
-    Y = consumption[:,-1]
-    return Y * (1 + change)
+    Y = consumption[:, -1]
+    return Y.reshape((-1, 1)) * (1 + change)
 
 
 def calc_gross_production(consumption: np.ndarray, change: np.ndarray) -> np.ndarray:
@@ -110,34 +129,49 @@ def calc_delta_gross_production(consumption: np.ndarray, change: np.ndarray) -> 
     return (X1 - X) / X * 100
 
 
-def show_chart_with_growth(consumption: np.ndarray, change: np.ndarray) -> np.ndarray:
-    X = calc_production(consumption)
-    X1 = calc_gross_production(consumption, change)
+def show_chart_with_growth(consumption: np.ndarray, change: np.ndarray):
+    X = calc_production(consumption).T[0]
+    X1 = calc_gross_production(consumption, change).T[0]
     size = len(consumption)
     index = np.arange(size)
     plt.title('Change of consumption')
     plt.axis([-0.5, size - 0.5, 0, max(X.max(), X1.max())])
     plt.xticks(index, range(size))
-    plt.bar(index, X, color='brown')
-    plt.bar(index, X1 - X, color='gray', bottom=X)
+    plt.bar(index, X, color='green', alpha=0.5)
+    plt.bar(index, X1 - X, color='purple', alpha=0.3, bottom=X)
     plt.show()
 
 
-def run():
-    n = read_amount_from_console()
-    consumption = read_consumption_from_console(n)
-    change = read_change_from_console(n)
+def print_array(title: str, array: np.ndarray):
+    print(f"\n {title} \n", pd.DataFrame(np.round(array, 2)))
 
-    print("Валовый выпуск \n",
-          calc_production(consumption))
-    print("Прямые затраты \n",
-          calc_straight_costs(consumption))
-    print("Полные затраты \n",
-          calc_full_costs(consumption))
-    print("Конечное потребление \n",
-          calc_final_consumption(consumption, change))
-    print("Валовый выпуск \n",
-          calc_gross_production(consumption, change))
-    print("Изменение валового выпуска (%) \n",
-          calc_delta_gross_production(consumption, change))
-    show_chart_with_growth(consumption, change)
+
+def run():
+    while True:
+        input_type = input('Введите, каким способом вы хотите считать данные(0 - console, 1 - csv, 2 - random): ').strip()
+        if input_type == '0':
+            n = read_amount_from_console()
+            consumption = read_consumption_from_console(n)
+            change = read_change_from_console(n)
+        elif input_type == '1':
+            consumption = read_consumption_from_csv()
+            change = read_change_from_csv()
+        elif input_type == '2':
+            n = read_amount_from_console()
+            consumption = read_consumption_from_random(n)
+            change = read_change_from_random(n)
+        else:
+            print('Incorrect type')
+            continue
+
+        print_array('Балансовая таблица', consumption)
+        print_array('Валовый выпуск [X]', calc_production(consumption))
+        print_array('Прямые затраты [A]', calc_straight_costs(consumption))
+        print_array('Полные затраты [H]', calc_full_costs(consumption))
+        print_array('Вектор изменений конечного потребления', change)
+        print_array('Конечное потребление [Y1]', calc_final_consumption(consumption, change))
+        print_array('Валовый выпуск [X1]', calc_gross_production(consumption, change))
+        print_array('Изменение валового выпуска (%)', calc_delta_gross_production(consumption, change))
+        show_chart_with_growth(consumption, change)
+
+        break
