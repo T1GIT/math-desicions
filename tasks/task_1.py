@@ -1,3 +1,5 @@
+from typing import Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,13 +25,13 @@ def simple_solution():
     Y1 = Y * (1 + change)
     X1 = H @ Y1
 
-    index = np.arange(size)
-    plt.title('Change of consumption')
-    plt.axis([-0.5, size - 0.5, 0, max(X.max(), X1.max())])
-    plt.xticks(index, range(size))
-    plt.bar(index, X, color='pink')
-    plt.bar(index, X1 - X, color='#908493', bottom=X)
-    plt.show()
+    # index = np.arange(size)
+    # plt.title('Change of consumption')
+    # plt.axis([-0.5, size - 0.5, 0, max(X.max(), X1.max())])
+    # plt.xticks(index, range(size))
+    # plt.bar(index, X, color='pink')
+    # plt.bar(index, X1 - X, color='#908493', bottom=X)
+    # plt.show()
 
 
 def read_amount_from_console() -> int:
@@ -78,12 +80,12 @@ def read_change_from_console(n: int) -> np.ndarray:
 
 
 def read_consumption_from_csv() -> np.ndarray:
-    df = pd.read_csv('./data/consumption.csv', sep=';', decimal='.', header=None, index_col=None)
+    df = pd.read_csv('./data/task_1/consumption.csv', sep=';', decimal='.', header=None, index_col=None)
     return df.to_numpy()
 
 
 def read_change_from_csv() -> np.ndarray:
-    df = pd.read_csv('./data/change.csv', sep=';', decimal='.', header=None, index_col=None)
+    df = pd.read_csv('./data/task_2/change.csv', sep=';', decimal='.', header=None, index_col=None)
     return df.to_numpy() / 100
 
 
@@ -129,7 +131,13 @@ def calc_delta_gross_production(consumption: np.ndarray, change: np.ndarray) -> 
     return (X1 - X) / X * 100
 
 
-def show_chart_with_growth(consumption: np.ndarray, change: np.ndarray):
+def calc_clear_production(consumption: np.ndarray, change: np.ndarray) -> np.ndarray:
+    A = calc_straight_costs(consumption)
+    X1 = calc_gross_production(consumption, change)
+    return X1 - X1 * A.sum(axis=0).reshape(-1, 1)
+
+
+def show_chart_gross_production_with_growth(consumption: np.ndarray, change: np.ndarray):
     X = calc_production(consumption).T[0]
     X1 = calc_gross_production(consumption, change).T[0]
     size = len(consumption)
@@ -142,13 +150,51 @@ def show_chart_with_growth(consumption: np.ndarray, change: np.ndarray):
     plt.show()
 
 
-def print_array(title: str, array: np.ndarray):
-    print(f"\n {title} \n", pd.DataFrame(np.round(array, 2)))
+def show_chart_delta_gross_production(consumption: np.ndarray, change: np.ndarray):
+    X = calc_production(consumption).T[0]
+    X1 = calc_gross_production(consumption, change).T[0]
+    data = np.abs((X1 - X) / X * 100)
+    size = len(consumption)
+    index = np.arange(size)
+    plt.title('Delta gross production')
+    plt.axis([-0.5, size - 0.5, 0, max(data)])
+    plt.xticks(index, range(size))
+    plt.bar(index, data, color='green', alpha=0.5)
+    plt.show()
 
 
-def run():
+def is_matrix_effective(consumption: np.ndarray):
+    H = calc_full_costs(consumption)
+    return np.all(H > 0)
+
+
+def calc_forbenius_values(consumption: np.ndarray):
+    A = calc_straight_costs(consumption)
+    v = np.linalg.eigvals(A)
+    return v.max()
+
+
+def calc_forbenius_vector(consumption: np.ndarray):
+    A = calc_straight_costs(consumption)
+    w, v = np.linalg.eig(A)
+    return np.abs(v[:, 1])
+
+
+def print_array(title: str, array: np.ndarray, last: Optional[str] = None):
+    df = pd.DataFrame(array)
+    df.index = list(map(lambda x: f'Отрасль {x}', range(df.shape[0])))
+    df.columns = list(map(lambda x: f'Отрасль {x}', range(df.shape[1])))
+    if last:
+        df.columns = [*df.columns[:-1], last]
+    print(f"\n {title} \n", df)
+
+
+def run(auto: bool = False):
     while True:
-        input_type = input('Введите, каким способом вы хотите считать данные(0 - console, 1 - csv, 2 - random): ').strip()
+        if auto:
+            input_type = 1
+        else:
+            input_type = input('Введите, каким способом вы хотите считать данные(0 - console, 1 - csv, 2 - random): ').strip()
         if input_type == '0':
             n = read_amount_from_console()
             consumption = read_consumption_from_console(n)
@@ -164,14 +210,19 @@ def run():
             print('Incorrect type')
             continue
 
-        print_array('Балансовая таблица', consumption)
-        print_array('Валовый выпуск [X]', calc_production(consumption))
+        print_array('Балансовая таблица', consumption, 'Y0')
+        print_array('Валовый выпуск [X]', calc_production(consumption), 'X')
         print_array('Прямые затраты [A]', calc_straight_costs(consumption))
         print_array('Полные затраты [H]', calc_full_costs(consumption))
-        print_array('Вектор изменений конечного потребления', change)
-        print_array('Конечное потребление [Y1]', calc_final_consumption(consumption, change))
-        print_array('Валовый выпуск [X1]', calc_gross_production(consumption, change))
-        print_array('Изменение валового выпуска (%)', calc_delta_gross_production(consumption, change))
-        show_chart_with_growth(consumption, change)
+        print_array('Вектор изменений конечного потребления', change, 'DELTA')
+        print_array('Конечное потребление [Y1]', calc_final_consumption(consumption, change), 'Y1')
+        print_array('Валовый выпуск [X1]', calc_gross_production(consumption, change), 'X1')
+        print_array('Изменение валового выпуска (%)', calc_delta_gross_production(consumption, change), 'DELTA')
+        print_array('Вектор чистой продукции', calc_clear_production(consumption, change), 'XC')
+        show_chart_gross_production_with_growth(consumption, change)
+        show_chart_delta_gross_production(consumption, change)
+        print('\n Продуктивность матрицы \n', is_matrix_effective(consumption))
+        print('\n Число Форбениуса: \n', calc_forbenius_values(consumption))
+        print_array('Вектор Форбениуса', calc_forbenius_vector(consumption))
 
         break

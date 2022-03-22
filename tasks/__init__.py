@@ -1,1 +1,1 @@
-from . import task_1
+from . import *
