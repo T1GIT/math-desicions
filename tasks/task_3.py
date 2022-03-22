@@ -109,7 +109,7 @@ class Task3(AbstractTask):
             constraints={'type': 'ineq', 'fun': lambda args: -i_lam(*args) + self.i},
             bounds=[(bound, np.inf) for bound in self.bounds])
 
-        self.u_point = list(map(round, res.x.tolist()))
+        self.u_point = res.x.tolist()
         self.u_value = -res.fun
 
     def _parse_functions(self):
