@@ -37,7 +37,7 @@ class Task3(AbstractTask):
             self.q = int(input('Input q:'))
             self.i = int(input('Input i:'))
             bounds = input('Input bounds <x y>: ')
-            self.bounds = list(map(int, bounds)) if bounds != '' else [-self.Config.CHART_MAX for _ in range(2)]
+            self.bounds = list(map(int, bounds)) if bounds != '' else [-self.Config.MAX for _ in range(2)]
 
     def output(self, accuracy: int = 2):
         print(f'''
@@ -46,56 +46,52 @@ class Task3(AbstractTask):
         Значение q: {self.q}
         Значение i: {self.i}
         
-        Оптимальная точка: x={self.u_point[0]} y={self.u_point[1]}
+        Оптимальная точка: x={self.u_point[0]:.{accuracy}f} y={self.u_point[1]:.{accuracy}f}
         Значение в оптимальной точке: {self.u_value:.{accuracy}f}
         ''', )
 
     def chart(self):
         x, y = symbols('x y')
         u_lam = lambdify((x, y), self._u_expr)
-        y_lam = lambdify(x, solve(Eq(self._i_expr, self.i), y)[0])
 
-        x_surface = np.outer(np.linspace(
-            self.bounds[0],
-            self.Config.CHART_MAX,
-            self.Config.SURFACE_DENSITY
-        ), np.ones(self.Config.SURFACE_DENSITY))
-        y_surface = np.outer(np.linspace(
-            self.bounds[1],
-            self.Config.CHART_MAX,
-            self.Config.SURFACE_DENSITY
-        ), np.ones(self.Config.SURFACE_DENSITY)).T
+        x_surface = np.outer(
+            np.linspace(self.bounds[0], self.Config.MAX, self.Config.DENSITY),
+            np.ones(self.Config.DENSITY))
+        y_surface = np.outer(
+            np.linspace(self.bounds[1], self.Config.MAX, self.Config.DENSITY),
+            np.ones(self.Config.DENSITY)).T
         u_surface = np.vectorize(u_lam)(x_surface, y_surface)
-        x_contour = np.linspace(
-            self.bounds[0],
-            self.Config.CHART_MAX,
-            self.Config.CONTOUR_DENSITY
-        )
-        y_contour = np.linspace(
-            self.bounds[1],
-            self.Config.CHART_MAX,
-            self.Config.CONTOUR_DENSITY
-        )
+
+        x_contour = np.linspace(self.bounds[0], self.Config.MAX, self.Config.DENSITY)
+        y_contour = np.linspace(self.bounds[1], self.Config.MAX, self.Config.DENSITY)
         u_contour = np.vectorize(u_lam)(x_contour, y_contour.reshape((-1, 1)))
-        x_constraint = np.linspace(
-            self.bounds[0],
-            float(solve(Eq(self._i_expr, self.i), x)[0].evalf(subs={y: self.bounds[1]})),
-            self.Config.CONSTRAINT_DENSITY
-        )
+
+        y_lam = lambdify(x, solve(Eq(self._i_expr, self.i), y)[0])
+        x_lam = lambdify(y, solve(Eq(self._i_expr, self.i), x)[0])
+        x_max = x_lam(self.bounds[0])
+        x_constraint = np.linspace(self.bounds[0], x_max, self.Config.DENSITY)
         y_constraint = np.vectorize(y_lam)(x_constraint)
         u_constraint = np.vectorize(u_lam)(x_constraint, y_constraint)
 
-        go.Figure(data=[
-            go.Surface(x=x_surface, y=y_surface, z=u_surface),
-            go.Scatter3d(x=[self.u_point[0]], y=[self.u_point[1]], z=[self.u_value]),
-            go.Scatter3d(x=x_constraint, y=y_constraint, z=u_constraint, mode='lines')
+        y_lam = lambdify(x, solve(Eq(self._u_expr, self.u_value), y)[0])
+        x_lam = lambdify(y, solve(Eq(self._u_expr, self.u_value), x)[0])
+        x_min = x_lam(self.Config.MAX)
+        x_optimum = np.linspace(x_min, self.Config.MAX, self.Config.DENSITY)
+        y_optimum = np.vectorize(y_lam)(x_optimum)
+        u_optimum = np.vectorize(u_lam)(x_optimum, y_optimum)
 
-        ]).show()
+        go.Figure(data=[
+            go.Surface(name="Простанственная модель", x=x_surface, y=y_surface, z=u_surface),
+            go.Scatter3d(name="Оптимальная точка", x=[self.u_point[0]], y=[self.u_point[1]], z=[self.u_value]),
+            go.Scatter3d(name="Ограничение", x=x_constraint, y=y_constraint, z=u_constraint, mode='lines'),
+            go.Scatter3d(name="Кривая безразличия", x=x_optimum, y=y_optimum, z=u_optimum, mode='lines')
+        ], ).show()
 
         go.Figure(data=[
-            go.Contour(x=x_contour, y=y_contour, z=u_contour),
-            go.Scatter(x=[self.u_point[0]], y=[self.u_point[1]]),
-            go.Scatter(x=x_constraint, y=y_constraint, mode='lines')
+            go.Contour(name="Простанственная модель", x=x_contour, y=y_contour, z=u_contour),
+            go.Scatter(name="Оптимальная точка", x=[self.u_point[0]], y=[self.u_point[1]]),
+            go.Scatter(name="Ограничение", x=x_constraint, y=y_constraint, mode='lines', fill="tozeroy"),
+            go.Scatter(name="Кривая безразличия", x=x_optimum, y=y_optimum, mode='lines')
         ]).show()
 
     def calc(self):
@@ -123,10 +119,8 @@ class Task3(AbstractTask):
         self._i_expr = i_expr.subs([(p, self.p), (q, self.q)])
 
     class Config:
-        SURFACE_DENSITY = 100
-        CONTOUR_DENSITY = 100
-        CONSTRAINT_DENSITY = 100
-        CHART_MAX = 100
+        DENSITY = 100
+        MAX = 100
 
 
 def run():
