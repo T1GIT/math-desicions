@@ -51,19 +51,13 @@ class Task2(AbstractTask):
     def chart(self):
         p_lam = lambdify(symbols('p1 p2'), self._p_expr)
 
-        p1_surface = np.outer(np.linspace(
-            -self.Config.CHART_MAX,
-            self.Config.CHART_MAX,
-            self.Config.SURFACE_DENSITY
-        ), np.ones(self.Config.SURFACE_DENSITY))
+        p1_surface = np.outer(
+            np.linspace(0, self.Config.MAX, self.Config.DENSITY),
+            np.ones(self.Config.DENSITY))
         p2_surface = p1_surface.T
         p_surface = np.vectorize(p_lam)(p1_surface, p2_surface)
 
-        p1_contour = np.linspace(
-            -self.Config.CHART_MAX,
-            self.Config.CHART_MAX,
-            self.Config.CONTOUR_DENSITY
-        )
+        p1_contour = np.linspace(0, self.Config.MAX, self.Config.DENSITY)
         p2_contour = p1_contour
         p_contour = np.vectorize(p_lam)(p1_contour, p2_contour.reshape((-1, 1)))
 
@@ -106,9 +100,8 @@ class Task2(AbstractTask):
         self._p_expr = p_expr.subs([(q1, self._q1_expr), (q2, self._q2_expr), (c, self._c_expr)])
 
     class Config:
-        SURFACE_DENSITY = 100
-        CONTOUR_DENSITY = 100
-        CHART_MAX = 100
+        DENSITY = 100
+        MAX = 100
 
 
 def run():

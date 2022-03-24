@@ -1,6 +1,6 @@
-from tasks import task_1, task_2, task_3
+from tasks import task_1, task_2, task_3, task_4
 
-tasks = [task_1, task_2, task_3]
+tasks = [task_1, task_2, task_3, task_4]
 
 
 def run():
