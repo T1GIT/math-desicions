@@ -17,21 +17,24 @@ class Task3(AbstractTask):
 
     q_point: [int, int]
     q_value: int
+    isoquant: str
+    isocost: str
 
     _q_expr: Expr
     _i_expr: Expr
 
     def __init__(self):
-        self.q_raw = '30 * (x ** (1/2)) * (y ** (1/3))'
         self.i_raw = 'x * w1 + y * w2'
 
     def input(self, default: bool = False):
         if default:
+            self.q_raw = '30 * (x ** (1/2)) * (y ** (1/3))'
             self.w1 = 5
             self.w2 = 10
             self.i = 600
             self.bounds = [1e-5, 1e-5]
         else:
+            self.q_raw = input('Input Q(x, y)')
             self.w1 = int(input('Input w1:'))
             self.w2 = int(input('Input w2:'))
             self.i = int(input('Input i:'))
@@ -43,6 +46,9 @@ class Task3(AbstractTask):
         Значение w1: {self.w1}
         Значение w2: {self.w2}
         Значение i: {self.i}
+        
+        Функция изокванты f(x): {self.isoquant}
+        Функция изокосты f(x): {self.isocost}
         
         Оптимальная точка: x={self.q_point[0]:.{accuracy}f} y={self.q_point[1]:.{accuracy}f}
         Значение в оптимальной точке: {self.q_value:.{accuracy}f}
@@ -107,6 +113,10 @@ class Task3(AbstractTask):
 
         self.q_point = res.x.tolist()
         self.q_value = -res.fun
+
+        self.isoquant = str(solve(Eq(self._q_expr, self.q_value), symbols('y'))[0])
+        self.isocost = str(solve(Eq(self._i_expr, self.i), symbols('y'))[0])
+
 
     def _parse_functions(self):
         x, y = symbols('x, y')
