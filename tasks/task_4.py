@@ -117,7 +117,6 @@ class Task3(AbstractTask):
         self.isoquant = str(solve(Eq(self._q_expr, self.q_value), symbols('y'))[0])
         self.isocost = str(solve(Eq(self._i_expr, self.i), symbols('y'))[0])
 
-
     def _parse_functions(self):
         x, y = symbols('x, y')
         q_scope = {"x": x, "y": y}
