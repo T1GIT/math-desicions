@@ -6,49 +6,36 @@ from sympy import Eq, Expr, lambdify, parse_expr, solve, symbols
 from utils.abstract_task import AbstractTask
 
 
-class Task4(AbstractTask):
-    q_raw: str
-    i_raw: str
-    w1: int
-    w2: int
-    i: int
-    bounds: [int, int]
+class Task5(AbstractTask):
+    n: int
+    f_raw: str
+    con_raw: list[str]
 
-    q_point: [int, int]
-    q_value: int
-    isoquant: str
-    isocost: str
-
-    _q_expr: Expr
-    _i_expr: Expr
-
-    def __init__(self):
-        self.i_raw = 'x * w1 + y * w2'
+    _f_expr: Expr
+    _con_expr: list[Expr]
 
     def input(self, default: bool = False):
         if default:
-            self.q_raw = '30 * (x ** (1/2)) * (y ** (1/3))'
-            self.w1 = 5
-            self.w2 = 10
-            self.i = 600
-            self.bounds = [1e-5, 1e-5]
+            self.con_raw = [
+
+            ]
+            self.n = len(self.con_raw)
         else:
-            self.q_raw = input('Input Q(x, y)')
-            self.w1 = int(input('Input w1:'))
-            self.w2 = int(input('Input w2:'))
-            self.i = int(input('Input i:'))
-            bounds = input('Input bounds <x y>: ')
-            self.bounds = list(map(int, bounds)) if bounds != '' else [0, 0]
+            self.n = int(input('Input n: '))
+            self.con_raw = [
+                input(f'Constraint[{i}]')
+                for i in range(self.n)
+            ]
 
     def output(self, accuracy: int = 2):
         print(f'''
         Значение w1: {self.w1}
         Значение w2: {self.w2}
         Значение i: {self.i}
-        
+
         Функция изокванты f(x): {self.isoquant}
         Функция изокосты f(x): {self.isocost}
-        
+
         Оптимальная точка: x={self.q_point[0]:.{accuracy}f} y={self.q_point[1]:.{accuracy}f}
         Значение в оптимальной точке: {self.q_value:.{accuracy}f}
         ''', )
@@ -87,22 +74,28 @@ class Task4(AbstractTask):
 
         go.Figure(data=[
             go.Surface(name="Простанственная модель", x=x_surface, y=y_surface, z=q_surface),
-            go.Scatter3d(name="Оптимальная точка", x=[self.q_point[0]], y=[self.q_point[1]], z=[self.q_value], marker=dict(color='white')),
+            go.Scatter3d(name="Оптимальная точка", x=[self.q_point[0]], y=[self.q_point[1]], z=[self.q_value],
+                         marker=dict(color='white')),
             go.Scatter3d(name="Ограничение", x=x_constraint, y=y_constraint, z=q_constraint, mode='lines'),
             go.Scatter3d(name="Кривая безразличия", x=x_optimum, y=y_optimum, z=q_optimum, mode='lines')
         ], ).show()
 
         go.Figure(data=[
-            go.Contour(name="Простанственная модель", x=x_contour, y=y_contour, z=q_contour, ncontours=5),
+            go.Contour(name="Простанственная модель", x=x_contour, y=y_contour, z=q_contour),
             go.Scatter(name="Оптимальная точка", x=[self.q_point[0]], y=[self.q_point[1]], marker=dict(color='white')),
             go.Scatter(name="Ограничение", x=x_constraint, y=y_constraint, mode='lines', fill="tozeroy"),
             go.Scatter(name="Кривая безразличия", x=x_optimum, y=y_optimum, mode='lines')
         ]).show()
 
     def calc(self):
-        self._parse_functions()
-        q_lam = lambdify(symbols('x y'), self._q_expr)
-        i_lam = lambdify(symbols('x y'), self._i_expr)
+        x1, x2 = symbols('x1 x2')
+        scope = {"x1": x1, "x2": x2}
+        self._f_expr = parse_expr(self.f_raw, local_dict=scope)
+        self._con_expr = [
+            parse_expr(con, local_dict=scope)
+            for con in self.con_raw
+        ]
+
 
         res = minimize(
             lambda args: -q_lam(*args),
@@ -117,7 +110,7 @@ class Task4(AbstractTask):
         self.isocost = str(solve(Eq(self._i_expr, self.i), symbols('y'))[0])
 
     def _parse_functions(self):
-        x, y = symbols('x y')
+        x, y = symbols('x, y')
         q_scope = {"x": x, "y": y}
         self._q_expr = parse_expr(self.q_raw, local_dict=q_scope, evaluate=False)
 
@@ -132,8 +125,12 @@ class Task4(AbstractTask):
 
 
 def run():
-    task = Task4()
+    task = Task3()
     task.input(True)
     task.calc()
     task.chart()
     task.output()
+
+
+if __name__ == '__main__':
+    run()

@@ -80,12 +80,12 @@ def read_change_from_console(n: int) -> np.ndarray:
 
 
 def read_consumption_from_csv() -> np.ndarray:
-    df = pd.read_csv('./data/task_1/consumption.csv', sep=';', decimal='.', header=None, index_col=None)
+    df = pd.read_csv('../data/task_1/consumption.csv', sep=';', decimal='.', header=None, index_col=None)
     return df.to_numpy()
 
 
 def read_change_from_csv() -> np.ndarray:
-    df = pd.read_csv('./data/task_2/change.csv', sep=';', decimal='.', header=None, index_col=None)
+    df = pd.read_csv('../data/task_1/change.csv', sep=';', decimal='.', header=None, index_col=None)
     return df.to_numpy() / 100
 
 
@@ -192,7 +192,7 @@ def print_array(title: str, array: np.ndarray, last: Optional[str] = None):
 def run(auto: bool = False):
     while True:
         if auto:
-            input_type = 1
+            input_type = '1'
         else:
             input_type = input('Введите, каким способом вы хотите считать данные(0 - console, 1 - csv, 2 - random): ').strip()
         if input_type == '0':
@@ -226,3 +226,6 @@ def run(auto: bool = False):
         print_array('Вектор Форбениуса', calc_forbenius_vector(consumption))
 
         break
+
+if __name__ == '__main__':
+    run(True)

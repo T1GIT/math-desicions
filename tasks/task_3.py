@@ -111,7 +111,7 @@ class Task3(AbstractTask):
         self.u_value = -res.fun
 
     def _parse_functions(self):
-        x, y = symbols('x, y')
+        x, y = symbols('x y')
         u_scope = {"x": x, "y": y}
         self._u_expr = parse_expr(self.u_raw, local_dict=u_scope, evaluate=False)
 

@@ -4,3 +4,4 @@ pandas
 sympy
 scipy
 plotly
+colorama
