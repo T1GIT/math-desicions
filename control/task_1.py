@@ -20,7 +20,7 @@ class Task1(AbstractTask):
 
     def input(self, default: bool = False):
         if default:
-            self.price_raw = ['6;100000000;15;4', '9;15;2;100000000', '6;12;7;1']
+            self.price_raw = ['6;8;15;4', '9;15;2;3', '6;12;7;1']
             self.req_raw = '30;80;60;110'
             self.storage_raw = '60;130;90'
         else:
